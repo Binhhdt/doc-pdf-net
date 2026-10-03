@@ -6,388 +6,462 @@
 <title>Đọc PDF nét</title>
 <style>
 :root{
-  --bg:#dfe3e6; --surface:#f7f8f9; --ink:#16212b; --muted:#5b6873;
-  --line:#c3cad0; --accent:#0b6e6e; --accent-ink:#ffffff; --seg:#e9edf0;
+  --bg:#0f1b21; --card:#22313a; --bar:#275a70; --ink:#f2f6f8; --muted:#8fa3ad;
+  --accent:#5cc8e8; --line:#31434d; --drawer:#101d24;
   box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#12181d; --surface:#1b232a; --ink:#e8edf0; --muted:#93a0aa;
-    --line:#2c3740; --accent:#4fc4c0; --accent-ink:#0d1a1a; --seg:#232d35;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#12181d; --surface:#1b232a; --ink:#e8edf0; --muted:#93a0aa;
-  --line:#2c3740; --accent:#4fc4c0; --accent-ink:#0d1a1a; --seg:#232d35;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
 }
 *,*::before,*::after{box-sizing:inherit}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{
-  margin:0; background:var(--bg); color:var(--ink);
-  font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  font-size:15px; line-height:1.45; -webkit-text-size-adjust:100%;
-}
-button{font:inherit; color:inherit}
-:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Roboto,system-ui,sans-serif;font-size:15px;line-height:1.35;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+svg{width:24px;height:24px;display:block}
+.ib{background:none;border:0;width:44px;height:44px;display:grid;place-items:center;border-radius:22px;flex:none;padding:0}
 
-header{
-  position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
-  display:flex; align-items:center; gap:10px;
-  padding:10px 12px; background:var(--surface); border-bottom:1px solid var(--line);
-}
-#docName{flex:1; min-width:0; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-#pageNo{color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap}
-.btn{
-  border:1px solid var(--line); background:var(--surface); border-radius:8px;
-  padding:8px 12px; min-height:40px; cursor:pointer; white-space:nowrap;
-}
-.btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600}
+#top,#rtop{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bar);display:flex;align-items:center;gap:4px;padding:4px 6px;min-height:52px}
+.tt{flex:1;min-width:0}
+#title{font-size:19px}
+#sub{font-size:12px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sub:empty{display:none}
 
-#empty{padding:44px 22px 0; max-width:440px; margin:0 auto}
-#empty h1{font-size:26px; line-height:1.2; margin:0 0 10px; font-weight:600}
-#empty p{margin:0 0 22px; color:var(--muted)}
-#empty .btn{display:block; width:100%; margin-bottom:10px; min-height:48px; text-align:center}
-#msg{color:var(--muted); margin-top:14px; min-height:1.5em}
-#msg.err{color:#c0392b}
+#list{padding:8px}
+.row{display:flex;align-items:center;gap:12px;width:100%;background:var(--card);border:0;border-radius:6px;padding:12px;margin:0 0 8px;text-align:left;min-height:52px}
+.row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:17px}
+.row .ct{color:var(--muted)}
+.book{display:flex;gap:10px;background:var(--card);border-radius:6px;padding:8px;margin:0 0 8px}
+.cover{flex:none;width:92px;aspect-ratio:7/10;background:#16242b center/cover no-repeat;border:0;padding:0;border-radius:2px}
+.bi{flex:1;min-width:0;display:flex;flex-direction:column}
+.bt{background:none;border:0;padding:0;text-align:left;font-size:16px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bm{color:var(--muted);font-size:13px;margin-top:3px}
+.prog{margin-top:auto;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent)}
+.acts{display:flex;justify-content:flex-end;margin-top:2px}
+.acts .ib{width:40px;height:40px;color:var(--muted)}
+.acts .ib.on{color:var(--accent)}
+.acts .ib.on.fill svg{fill:currentColor}
+.note{padding:28px 14px;color:var(--muted);text-align:center}
+.note button{display:block;margin:16px auto 0;background:var(--accent);color:#06222c;border:0;border-radius:6px;padding:12px 16px;font-weight:600}
 
-#pages{max-width:900px; margin:0 auto; padding:10px 8px 150px}
-.page{
-  position:relative; width:100%; margin:0 0 10px; background:#fff;
-  box-shadow:0 1px 4px rgba(10,20,30,.25); overflow:hidden;
-}
-.page canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
-.page .tag{
-  position:absolute; right:6px; top:6px; font-size:11px; font-weight:600;
-  background:var(--accent); color:var(--accent-ink); padding:2px 7px; border-radius:10px;
-  display:none;
-}
-.page.sharp .tag{display:block}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:8;display:none}
+#drawer{position:fixed;left:0;top:0;bottom:0;width:min(300px,84vw);background:var(--drawer);z-index:9;transform:translateX(-102%);transition:transform .18s;overflow-y:auto;visibility:hidden;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body.drawer #drawer{transform:none;visibility:visible}
+body.drawer #scrim{display:block}
+#drawer h2{font-size:18px;font-weight:500;margin:0;padding:18px 16px;border-bottom:1px solid var(--line)}
+#drawer button{display:flex;align-items:center;gap:22px;width:100%;background:none;border:0;padding:13px 16px;font-size:16px;text-align:left}
+#drawer button.cur{color:var(--accent)}
+#drawer hr{border:0;border-top:1px solid var(--line);margin:6px 0}
+@media (prefers-reduced-motion:reduce){#drawer{transition:none}}
+
+#reader{display:none}
+body.reading #reader{display:block}
+body.reading #top,body.reading #list{display:none}
+#docName{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:16px}
+#pageNo{font-size:13px;opacity:.85;white-space:nowrap;font-variant-numeric:tabular-nums}
+#setBtn{background:none;border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:6px 10px;min-height:36px;margin-left:6px}
+#pages{max-width:900px;margin:0 auto;padding-bottom:40px}
+.page{position:relative;width:100%;margin:0 0 6px;background:#fff;overflow:hidden}
+.page canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 body.compare .page .enh{visibility:hidden}
-body.compare .page.sharp .tag{display:none}
-
-#bar{
-  position:fixed; left:0; right:0; bottom:0; z-index:5;
-  background:var(--surface); border-top:1px solid var(--line);
-  padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));
-  display:none;
-}
-#bar .in{max-width:900px; margin:0 auto; display:grid; gap:10px}
-.seg{display:grid; grid-template-columns:repeat(3,1fr); background:var(--seg); border-radius:9px; padding:3px}
-.seg button{border:0; background:transparent; border-radius:7px; min-height:36px; cursor:pointer; color:var(--muted)}
-.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); font-weight:600}
-.row{display:flex; align-items:center; gap:10px}
-.row label{white-space:nowrap; color:var(--muted)}
-.row input[type=range]{flex:1; min-width:0; accent-color:var(--accent); height:32px}
-#hold{user-select:none; -webkit-user-select:none; touch-action:none; -webkit-touch-callout:none}
-body.has-doc #bar{display:block}
-body.has-doc #empty{display:none}
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-top:1px solid var(--line);
+  padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));display:none}
+body.reading.showbar #bar{display:grid;gap:8px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg);border-radius:8px;padding:3px}
+.seg button{border:0;background:transparent;border-radius:6px;min-height:36px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#06222c;font-weight:600}
+.ctl{display:flex;align-items:center;gap:8px}
+.ctl label{white-space:nowrap;color:var(--muted)}
+.ctl input{flex:1;min-width:0;accent-color:var(--accent);height:32px}
+#hold{background:none;border:1px solid var(--line);border-radius:6px;padding:6px 10px;min-height:38px;white-space:nowrap;user-select:none;-webkit-user-select:none;touch-action:none}
 </style>
 </head>
 <body>
-<header>
-  <div id="docName">Đọc PDF nét</div>
-  <div id="pageNo"></div>
-  <label class="btn" for="file" id="openBtn" tabindex="0">Mở file</label>
-  <input id="file" type="file" accept="application/pdf,.pdf" hidden>
+<header id="top">
+  <button class="ib" id="menuBtn" aria-label="Mở menu"></button>
+  <div class="tt"><div id="title"></div><div id="sub"></div></div>
 </header>
+<main id="list"></main>
 
-<section id="empty">
-  <h1>Trang PDF tự nét, không cần phóng to</h1>
-  <p>Chữ được vẽ đúng độ phân giải màn hình. Trang scan mờ được tự động làm nét, tăng tương phản và làm trắng nền giấy.</p>
-  <label class="btn primary" for="file">Chọn file PDF trong máy</label>
-  <button class="btn" id="sampleBtn" type="button">Thử trang scan mờ có sẵn</button>
-  <div id="msg" role="status"></div>
-</section>
+<div id="scrim"></div>
+<nav id="drawer" aria-label="Menu">
+  <h2>Đọc PDF nét</h2>
+  <button data-shelf="reading" data-ic="loop">Đang đọc</button>
+  <button data-shelf="all" data-ic="book">Sách và Tài liệu</button>
+  <button data-shelf="fav" data-ic="star">Yêu thích</button>
+  <button data-shelf="later" data-ic="clock">Sẽ đọc</button>
+  <button data-shelf="done" data-ic="check">Đã đọc</button>
+  <button data-shelf="folder" data-ic="folder">Thư mục</button>
+  <hr>
+  <button id="pickBtn" data-ic="plus">Mở file khác</button>
+</nav>
+<input id="file" type="file" accept="application/pdf,.pdf" hidden>
 
-<main id="pages"></main>
-
-<div id="bar">
-  <div class="in">
+<section id="reader">
+  <header id="rtop">
+    <button class="ib" id="backBtn" aria-label="Quay lại"></button>
+    <div id="docName"></div>
+    <div id="pageNo"></div>
+    <button id="setBtn" type="button">Nét</button>
+  </header>
+  <div id="pages"></div>
+  <div id="bar">
     <div class="seg" role="group" aria-label="Làm nét">
-      <button type="button" data-mode="off" aria-pressed="false">Tắt</button>
-      <button type="button" data-mode="auto" aria-pressed="true">Tự động</button>
-      <button type="button" data-mode="on" aria-pressed="false">Luôn bật</button>
+      <button type="button" data-mode="off">Tắt</button>
+      <button type="button" data-mode="auto">Tự động</button>
+      <button type="button" data-mode="on">Luôn bật</button>
     </div>
-    <div class="row">
+    <div class="ctl">
       <label for="str">Độ nét</label>
-      <input id="str" type="range" min="0" max="100" value="60">
-      <button class="btn" id="hold" type="button">Giữ để xem gốc</button>
+      <input id="str" type="range" min="0" max="100" value="70">
+      <button id="hold" type="button">Giữ để xem gốc</button>
     </div>
   </div>
-</div>
+</section>
 
 <script src="pdf.min.js"></script>
 <script src="pdf.worker.min.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
-  const pagesEl = $('pages'), msg = $('msg');
+  const N = window.Native || null;
+  const listEl = $('list'), pagesEl = $('pages');
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
   const MAX_PX = 4.5e6;
-  let source = null, pages = [], gen = 0, busy = false, io = null;
-  let mode = 'auto', strength = 0.6, enhGen = 0, lastW = window.innerWidth, curIdx = 0;
+  const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
+  const coll = new Intl.Collator('vi', {numeric:true, sensitivity:'base'}).compare;
 
+  /* ---------- Biểu tượng ---------- */
+  const IC = {
+    menu:'M3 6h18M3 12h18M3 18h18', back:'M15 5l-7 7 7 7',
+    up:'M5 20h14M12 16V5M7 10l5-5 5 5', plus:'M12 5v14M5 12h14',
+    folder:'M3 6h7l2 2h9v11H3z', book:'M4 5h7v14H4zM13 5h7v14h-7z',
+    star:'M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z',
+    clock:'M12 3a9 9 0 1 0 0 18a9 9 0 0 0 0-18M12 7v5l3 2', check:'M4 12l5 5L20 6',
+    loop:'M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3'
+  };
+  const ico = k => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + IC[k] + '"/></svg>';
+  $('menuBtn').innerHTML = ico('menu'); $('backBtn').innerHTML = ico('back');
+  document.querySelectorAll('#drawer button').forEach(b => b.insertAdjacentHTML('afterbegin', ico(b.dataset.ic)));
+
+  /* ---------- Lưu trữ ---------- */
+  let books = {}, mode = 'auto', strength = 0.7, view = null;
+  try{ books = JSON.parse(localStorage.getItem('pdfnet.books') || '{}') || {}; }catch(e){}
   try{
     const m = localStorage.getItem('pdfnet.mode'), s = localStorage.getItem('pdfnet.str');
     if (m === 'off' || m === 'auto' || m === 'on') mode = m;
     if (s !== null && !isNaN(+s)) strength = Math.min(1, Math.max(0, +s));
+    view = JSON.parse(localStorage.getItem('pdfnet.view') || 'null');
   }catch(e){}
-  const save = () => { try{ localStorage.setItem('pdfnet.mode', mode); localStorage.setItem('pdfnet.str', String(strength)); }catch(e){} };
+  function saveBooks(){
+    try{ localStorage.setItem('pdfnet.books', JSON.stringify(books)); }
+    catch(e){ for (const k in books) delete books[k].cover; try{ localStorage.setItem('pdfnet.books', JSON.stringify(books)); }catch(e2){} }
+  }
+  let sbT = 0; const saveBooksSoon = () => { clearTimeout(sbT); sbT = setTimeout(saveBooks, 800); };
+  const saveSet = () => { try{ localStorage.setItem('pdfnet.mode', mode); localStorage.setItem('pdfnet.str', String(strength)); }catch(e){} };
+  const meta = p => books[p] || (books[p] = {});
 
-  const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
-  function say(t, err){ msg.textContent = t || ''; msg.className = err ? 'err' : ''; }
+  /* ---------- Thư viện ---------- */
+  const root = N ? N.root() : '';
+  let scanCache = null, reading = false, listY = 0;
+  const SHELF = {reading:'Đang đọc', all:'Sách và Tài liệu', fav:'Yêu thích', later:'Sẽ đọc', done:'Đã đọc'};
+  if (!view || !view.type) view = {type:'folder', path:root};
 
-  /* ---------- Làm nét: unsharp mask + cân mức sáng + làm trắng nền ---------- */
+  function go(v){
+    view = v;
+    try{ localStorage.setItem('pdfnet.view', JSON.stringify(v)); }catch(e){}
+    document.body.classList.remove('drawer');
+    render(); window.scrollTo(0, 0);
+  }
+  function note(text, btn, fn){
+    const d = document.createElement('div'); d.className = 'note'; d.textContent = text;
+    if (btn){ const b = document.createElement('button'); b.type = 'button'; b.textContent = btn; b.onclick = fn; d.appendChild(b); }
+    return d;
+  }
+  function row(icon, name, count, fn){
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'row'; b.innerHTML = ico(icon);
+    const n = document.createElement('span'); n.className = 'nm'; n.textContent = name; b.appendChild(n);
+    if (count != null){ const c = document.createElement('span'); c.className = 'ct'; c.textContent = count; b.appendChild(c); }
+    b.onclick = fn; return b;
+  }
+  const fmtSize = s => s >= 1048576 ? Math.round(s/1048576) + ' MB' : Math.max(1, Math.round(s/1024)) + ' KB';
+  function bookCard(it){
+    const m = books[it.p] || {};
+    const el = document.createElement('div'); el.className = 'book';
+    const cv = document.createElement('button'); cv.type = 'button'; cv.className = 'cover'; cv.setAttribute('aria-label', 'Mở ' + it.n);
+    if (m.cover) cv.style.backgroundImage = 'url(' + m.cover + ')'; else { cv.dataset.p = it.p; coverIO.observe(cv); }
+    const bi = document.createElement('div'); bi.className = 'bi';
+    const bt = document.createElement('button'); bt.type = 'button'; bt.className = 'bt'; bt.textContent = it.n.replace(/\.pdf$/i, '');
+    const bm = document.createElement('div'); bm.className = 'bm';
+    bm.textContent = 'PDF, ' + fmtSize(it.s || 0) + (m.page && m.pages ? ', trang ' + m.page + '/' + m.pages : '');
+    const pr = document.createElement('div'); pr.className = 'prog';
+    const bar = document.createElement('i'); bar.style.width = (m.page && m.pages ? Math.round(m.page/m.pages*100) : 0) + '%'; pr.appendChild(bar);
+    const acts = document.createElement('div'); acts.className = 'acts';
+    [['fav','star','Yêu thích'],['later','clock','Sẽ đọc'],['done','check','Đã đọc']].forEach(([k, ic, lb]) => {
+      const b = document.createElement('button'); b.type = 'button';
+      b.className = 'ib' + (k === 'fav' ? ' fill' : '') + (m[k] ? ' on' : '');
+      b.innerHTML = ico(ic); b.setAttribute('aria-label', lb); b.setAttribute('aria-pressed', String(!!m[k]));
+      b.onclick = () => { const mm = meta(it.p); mm.n = it.n; mm.s = it.s; mm[k] = !mm[k]; saveBooks(); b.classList.toggle('on', mm[k]); b.setAttribute('aria-pressed', String(mm[k])); };
+      acts.appendChild(b);
+    });
+    cv.onclick = bt.onclick = () => openPath(it.p, it.n, it.s);
+    bi.append(bt, bm, pr, acts); el.append(cv, bi);
+    return el;
+  }
+  function render(){
+    listEl.textContent = '';
+    const title = $('title'), sub = $('sub');
+    const key = view.type === 'folder' ? 'folder' : view.key;
+    document.querySelectorAll('#drawer button[data-shelf]').forEach(b => b.classList.toggle('cur', b.dataset.shelf === key));
+    title.textContent = view.type === 'folder' ? 'Thư mục' : SHELF[view.key]; sub.textContent = '';
+    if (!N){ listEl.append(note('Bản web không duyệt được thư mục. Chọn một file PDF để đọc.', 'Chọn file PDF', () => $('file').click())); return; }
+    if (!N.hasAccess()){ listEl.append(note('Ứng dụng cần quyền truy cập file để hiện thư mục và sách trong máy.', 'Cho phép truy cập file', () => N.requestAccess())); return; }
+    if (view.type === 'folder'){
+      const path = view.path || root; sub.textContent = path;
+      let items = []; try{ items = JSON.parse(N.list(path)); }catch(e){}
+      if (path !== root && path.indexOf(root) === 0) listEl.append(row('up', '..', null, () => go({type:'folder', path: path.slice(0, path.lastIndexOf('/')) || root})));
+      items.sort((a, b) => (b.d - a.d) || coll(a.n, b.n));
+      for (const it of items) listEl.append(it.d ? row('folder', it.n, it.c, () => go({type:'folder', path: it.p})) : bookCard(it));
+      if (!items.length) listEl.append(note('Thư mục này chưa có file PDF.'));
+      return;
+    }
+    let items;
+    if (view.key === 'all'){
+      if (!scanCache){ try{ scanCache = JSON.parse(N.scan()); }catch(e){ scanCache = []; } }
+      items = scanCache.slice().sort((a, b) => coll(a.n, b.n));
+    } else {
+      items = Object.keys(books).map(p => ({p, n: books[p].n, s: books[p].s, m: books[p]})).filter(x => x.n);
+      if (view.key === 'reading') items = items.filter(x => x.m.last && !x.m.done).sort((a, b) => b.m.last - a.m.last);
+      else items = items.filter(x => x.m[view.key]).sort((a, b) => coll(a.n, b.n));
+    }
+    for (const it of items) listEl.append(bookCard(it));
+    if (!items.length) listEl.append(note(view.key === 'all' ? 'Chưa tìm thấy file PDF nào trong máy.' : view.key === 'reading' ? 'Chưa có sách đang đọc. Mở một sách trong Thư mục để bắt đầu.' : 'Chưa có sách nào ở mục này.'));
+  }
+
+  /* ---------- Ảnh bìa ---------- */
+  const docOpts = p => ({url: '/file?p=' + encodeURIComponent(p), disableAutoFetch: true, disableStream: true, rangeChunkSize: 262144, isEvalSupported: false});
+  const coverQ = []; let coverBusy = false;
+  const coverIO = new IntersectionObserver(es => {
+    for (const e of es) if (e.isIntersecting){ coverIO.unobserve(e.target); coverQ.push(e.target); }
+    runCovers();
+  }, {rootMargin: '200px'});
+  async function makeCover(p){
+    const pdf = await pdfjsLib.getDocument(docOpts(p)).promise;
+    try{
+      const page = await pdf.getPage(1), v = page.getViewport({scale: 1});
+      const vp = page.getViewport({scale: 180 / v.width});
+      const c = document.createElement('canvas'); c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      await page.render({canvasContext: ctx, viewport: vp}).promise;
+      return c.toDataURL('image/jpeg', 0.6);
+    } finally { pdf.destroy(); }
+  }
+  async function runCovers(){
+    if (coverBusy) return; coverBusy = true;
+    while (coverQ.length && !reading){
+      const el = coverQ.shift(); if (!el.isConnected) continue;
+      try{ const url = await makeCover(el.dataset.p); meta(el.dataset.p).cover = url; el.style.backgroundImage = 'url(' + url + ')'; saveBooksSoon(); }
+      catch(e){ console.error(e); }
+      await nextFrame();
+    }
+    coverBusy = false;
+  }
+
+  /* ---------- Làm nét ---------- */
+  const scratch = document.createElement('canvas');
   function boxBlur(src, w, h, r){
     const tmp = new Uint8Array(w*h), dst = new Uint8Array(w*h), win = 2*r + 1;
     for (let y = 0; y < h; y++){
       const row = y*w; let sum = 0;
       for (let x = -r; x <= r; x++) sum += src[row + Math.min(w-1, Math.max(0, x))];
-      for (let x = 0; x < w; x++){
-        tmp[row+x] = sum / win;
-        const a = x - r, b = x + r + 1;
-        sum += src[row + (b < w ? b : w-1)] - src[row + (a > 0 ? a : 0)];
-      }
+      for (let x = 0; x < w; x++){ tmp[row+x] = sum/win; const a = x-r, b = x+r+1; sum += src[row + (b < w ? b : w-1)] - src[row + (a > 0 ? a : 0)]; }
     }
     for (let x = 0; x < w; x++){
       let sum = 0;
       for (let y = -r; y <= r; y++) sum += tmp[Math.min(h-1, Math.max(0, y))*w + x];
-      for (let y = 0; y < h; y++){
-        dst[y*w+x] = sum / win;
-        const a = y - r, b = y + r + 1;
-        sum += tmp[(b < h ? b : h-1)*w + x] - tmp[(a > 0 ? a : 0)*w + x];
-      }
+      for (let y = 0; y < h; y++){ dst[y*w+x] = sum/win; const a = y-r, b = y+r+1; sum += tmp[(b < h ? b : h-1)*w + x] - tmp[(a > 0 ? a : 0)*w + x]; }
     }
     return dst;
   }
-
-  function enhance(src, out, s){
-    const w = src.width, h = src.height, n = w*h;
-    const img = src.getContext('2d').getImageData(0, 0, w, h), d = img.data;
-    const L = new Uint8Array(n);
-    const hl = new Uint32Array(256), hr = new Uint32Array(256), hg = new Uint32Array(256), hb = new Uint32Array(256);
-    for (let i = 0, p = 0; i < n; i++, p += 4){
-      const r = d[p], g = d[p+1], b = d[p+2], l = (r*77 + g*150 + b*29) >> 8;
-      L[i] = l; hl[l]++; hr[r]++; hg[g]++; hb[b]++;
-    }
+  // Bước cuối ở đúng độ phân giải màn hình: làm trắng nền, làm đậm nét, tăng độ sắc cạnh
+  function finish(cv, s){
+    const w = cv.width, h = cv.height, n = w*h, ctx = cv.getContext('2d');
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    const L = new Uint8Array(n), hl = new Uint32Array(256), hr = new Uint32Array(256), hg = new Uint32Array(256), hb = new Uint32Array(256);
+    for (let i = 0, p = 0; i < n; i++, p += 4){ const r = d[p], g = d[p+1], b = d[p+2], l = (r*77 + g*150 + b*29) >> 8; L[i] = l; hl[l]++; hr[r]++; hg[g]++; hb[b]++; }
     const pct = (hist, q) => { const t = n*q; let c = 0; for (let v = 0; v < 256; v++){ c += hist[v]; if (c >= t) return v; } return 255; };
-    let wr = 255, wg = 255, wb = 255, black = 0;
-    if (pct(hl, .5) > 140){            // nền sáng (trang giấy): kéo nền về trắng, chữ về đen
+    let wr = 255, wg = 255, wb = 255, black = 0, gamma = 1;
+    if (pct(hl, .5) > 140){
       const k = Math.min(1, s*1.3);
-      wr = 255 + (pct(hr, .5)*0.97 - 255)*k;
-      wg = 255 + (pct(hg, .5)*0.97 - 255)*k;
-      wb = 255 + (pct(hb, .5)*0.97 - 255)*k;
-      black = Math.min(pct(hl, .01), 120) * s * 0.9;
+      wr = 255 + (pct(hr, .5)*0.97 - 255)*k; wg = 255 + (pct(hg, .5)*0.97 - 255)*k; wb = 255 + (pct(hb, .5)*0.97 - 255)*k;
+      black = Math.min(pct(hl, .01), 120)*s*0.9; gamma = 1 + 0.7*s;       // gamma > 1 làm nét chữ xám thành đậm
     }
-    const B = boxBlur(L, w, h, Math.max(1, Math.round(w/500)));
-    const amount = 0.6 + 1.8*s;
-    const kr = 255/Math.max(40, wr-black), kg = 255/Math.max(40, wg-black), kb = 255/Math.max(40, wb-black);
+    const lut = wp => { const t = new Uint8ClampedArray(256), k = 1/Math.max(40, wp - black); for (let v = 0; v < 256; v++){ const x = Math.min(1, Math.max(0, (v - black)*k)); t[v] = Math.pow(x, gamma)*255; } return t; };
+    const lr = lut(wr), lg = lut(wg), lb = lut(wb);
+    const B = boxBlur(L, w, h, Math.max(1, Math.round(w/700))), amount = 0.6 + 1.8*s;
     for (let i = 0, p = 0; i < n; i++, p += 4){
-      let dl = L[i] - B[i];
-      dl = (dl > 2 || dl < -2) ? dl*amount : 0;   // bỏ qua nhiễu nhỏ
-      d[p]   = (d[p]   + dl - black)*kr;
-      d[p+1] = (d[p+1] + dl - black)*kg;
-      d[p+2] = (d[p+2] + dl - black)*kb;
+      let dl = L[i] - B[i]; dl = (dl > 2 || dl < -2) ? dl*amount : 0;
+      let v = d[p] + dl;   d[p]   = lr[v < 0 ? 0 : v > 255 ? 255 : v | 0];
+      v = d[p+1] + dl;     d[p+1] = lg[v < 0 ? 0 : v > 255 ? 255 : v | 0];
+      v = d[p+2] + dl;     d[p+2] = lb[v < 0 ? 0 : v > 255 ? 255 : v | 0];
     }
-    out.width = w; out.height = h;
-    out.getContext('2d').putImageData(img, 0, 0);
+    ctx.putImageData(img, 0, 0);
   }
-
-  function applyEnhance(p){
-    const should = mode === 'on' || (mode === 'auto' && p.isScan);
-    if (should && strength > 0 && p.orig.width){
-      try{ enhance(p.orig, p.enh, strength); p.el.classList.add('sharp'); return; }
-      catch(e){ console.error(e); }
+  // scratch đang chứa trang ở độ phân giải cao. Cắt lề trắng, làm dày nét, thu về chiều rộng T rồi làm nét.
+  function sharpen(orig, enh, T, s){
+    const w = scratch.width, h = scratch.height, n = w*h, sctx = scratch.getContext('2d');
+    const img = sctx.getImageData(0, 0, w, h), d = img.data, L = new Uint8Array(n);
+    const col = new Uint32Array(w), rowc = new Uint32Array(h);
+    for (let y = 0, i = 0, p = 0; y < h; y++) for (let x = 0; x < w; x++, i++, p += 4){
+      const l = (d[p]*77 + d[p+1]*150 + d[p+2]*29) >> 8; L[i] = l; if (l < 150){ col[x]++; rowc[y]++; }
     }
-    p.enh.width = p.enh.height = 0;
-    p.el.classList.remove('sharp');
-  }
-  async function refreshEnhance(){
-    const g = ++enhGen;
-    for (const p of pages){
-      if (p.state !== 'done') continue;
-      if (g !== enhGen) return;
-      applyEnhance(p);
-      await nextFrame();
-    }
-  }
-
-  /* ---------- Nguồn trang ---------- */
-  function pdfSource(pdf, name){
-    return {
-      name, numPages: pdf.numPages,
-      async ratio(){ const v = (await pdf.getPage(1)).getViewport({scale:1}); return v.width / v.height; },
-      async render(i, pxW, canvas){
-        const page = await pdf.getPage(i);
-        const v1 = page.getViewport({scale:1});
-        let scale = pxW / v1.width;
-        if (v1.width*scale*v1.height*scale > MAX_PX) scale = Math.sqrt(MAX_PX/(v1.width*v1.height));
-        const vp = page.getViewport({scale});
-        canvas.width = Math.floor(vp.width); canvas.height = Math.floor(vp.height);
-        const ctx = canvas.getContext('2d', {willReadFrequently:true});
-        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({canvasContext: ctx, viewport: vp}).promise;
-        let chars = 0;
-        try{ const tc = await page.getTextContent(); for (const it of tc.items) chars += (it.str || '').trim().length; }catch(e){}
-        page.cleanup();
-        return {isScan: chars < 20};     // gần như không có chữ thật → coi là trang scan
+    let x0 = 0, y0 = 0, x1 = w-1, y1 = h-1;
+    { const ct = Math.max(2, h*0.004), rt = Math.max(2, w*0.004);
+      let a = 0; while (a < w && col[a] < ct) a++; let b = w-1; while (b > a && col[b] < ct) b--;
+      let c = 0; while (c < h && rowc[c] < rt) c++; let e = h-1; while (e > c && rowc[e] < rt) e--;
+      const mx = Math.round(w*0.012), my = Math.round(h*0.012);
+      a = Math.max(0, a-mx); b = Math.min(w-1, b+mx); c = Math.max(0, c-my); e = Math.min(h-1, e+my);
+      if (b-a > w*0.5 && e-c > h*0.5){ x0 = a; x1 = b; y0 = c; y1 = e; } }
+    const cw = x1-x0+1, ch = y1-y0+1, ow = Math.min(T, cw), oh = Math.max(1, Math.round(ch*ow/cw));
+    orig.width = ow; orig.height = oh;
+    const octx = orig.getContext('2d'); octx.imageSmoothingEnabled = true; octx.imageSmoothingQuality = 'high';
+    octx.drawImage(scratch, x0, y0, cw, ch, 0, 0, ow, oh);
+    if (cw >= 1.4*ow){                      // làm dày nét mảnh trước khi thu nhỏ để chữ không bị nhạt đi
+      const k = Math.min(1, s*0.8), M = new Uint8Array(n);
+      for (let y = 0; y < h; y++){ const r = y*w; for (let x = 0; x < w; x++){ let m = L[r+x]; if (x > 0 && L[r+x-1] < m) m = L[r+x-1]; if (x < w-1 && L[r+x+1] < m) m = L[r+x+1]; M[r+x] = m; } }
+      for (let i = 0, p = 0; i < n; i++, p += 4){
+        let m = M[i]; if (i >= w && M[i-w] < m) m = M[i-w]; if (i < n-w && M[i+w] < m) m = M[i+w];
+        const dl = (m - L[i])*k; if (dl){ d[p] += dl; d[p+1] += dl; d[p+2] += dl; }
       }
-    };
+      sctx.putImageData(img, 0, 0);
+    }
+    enh.width = ow; enh.height = oh;
+    const ectx = enh.getContext('2d', {willReadFrequently: true}); ectx.imageSmoothingEnabled = true; ectx.imageSmoothingQuality = 'high';
+    ectx.drawImage(scratch, x0, y0, cw, ch, 0, 0, ow, oh);
+    finish(enh, s);
   }
 
-  const SAMPLE = [
-    ['Biên bản họp tổ dân phố', 'Hôm nay, vào lúc 19 giờ 30 phút, tại nhà văn hoá khu phố, tổ dân phố số 7 tiến hành họp định kỳ quý ba. Thành phần tham dự gồm tổ trưởng, tổ phó, thư ký và đại diện bốn mươi hai hộ gia đình. Nội dung chính: báo cáo thu chi quỹ vệ sinh, kế hoạch sửa đường thoát nước ở ngõ 14 và việc lắp thêm đèn chiếu sáng. Sau khi thảo luận, các hộ thống nhất đóng góp theo mức đã đề xuất, bắt đầu thu từ đầu tháng sau. Thư ký ghi lại ý kiến của từng hộ và đọc lại trước khi mọi người ký tên xác nhận.'],
-    ['Ghi chú bảo quản sách cũ', 'Sách in trên giấy có độ a-xít cao thường ngả vàng sau vài chục năm. Nên để sách ở nơi khô, thoáng, tránh ánh nắng chiếu thẳng và tránh tường ẩm. Không dùng băng dính trong để vá trang rách vì keo sẽ thấm vào giấy và để lại vết ố. Khi chụp lại sách để lưu trữ, đặt trang thật phẳng, ánh sáng đều hai bên và giữ máy song song với mặt giấy. Bản chụp mờ vẫn đọc được nếu phần mềm làm nét chữ và làm trắng nền giấy, đúng như trang bạn đang xem.']
-  ];
-  const sampleSource = {
-    name: 'Trang scan mẫu', numPages: SAMPLE.length,
-    async ratio(){ return 340/480; },
-    async render(i, pxW, canvas){
-      const sw = 340, sh = 480, s = document.createElement('canvas');
-      s.width = sw; s.height = sh;
-      const c = s.getContext('2d');
-      const g = c.createLinearGradient(0, 0, sw, sh);
-      g.addColorStop(0, '#ddd3b8'); g.addColorStop(1, '#c9bea0');
-      c.fillStyle = g; c.fillRect(0, 0, sw, sh);
-      c.fillStyle = '#5b5548';
-      c.font = 'bold 15px Georgia, "Times New Roman", serif';
-      c.fillText(SAMPLE[i-1][0], 26, 46);
-      c.font = '11px Georgia, "Times New Roman", serif';
-      let y = 74;
-      for (let rep = 0; rep < 3 && y < sh - 24; rep++){
-        let line = '';
-        for (const word of SAMPLE[i-1][1].split(' ')){
-          const t = line ? line + ' ' + word : word;
-          if (c.measureText(t).width > sw - 52){ c.fillText(line, 26, y); y += 16; line = word; if (y > sh - 24) break; }
-          else line = t;
-        }
-        if (y <= sh - 24){ c.fillText(line, 26, y); y += 26; }
-      }
-      canvas.width = pxW; canvas.height = Math.round(pxW*sh/sw);
-      const ctx = canvas.getContext('2d', {willReadFrequently:true});
-      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(s, 0, 0, canvas.width, canvas.height);   // phóng từ ảnh nhỏ → mờ như bản scan kém
-      return {isScan: true};
-    }
-  };
-
-  /* ---------- Hiển thị, chỉ vẽ các trang gần màn hình ---------- */
+  /* ---------- Trình đọc ---------- */
+  let pdfDoc = null, curPath = null, pages = [], gen = 0, busy = false, io = null, curIdx = 1, lastW = window.innerWidth;
   function currentIndex(){
     const el = document.elementFromPoint(window.innerWidth/2, window.innerHeight/2);
     const pg = el && el.closest ? el.closest('.page') : null;
     if (pg) curIdx = +pg.dataset.i;
     return curIdx;
   }
-  function unload(p){
-    p.orig.width = p.orig.height = 0; p.enh.width = p.enh.height = 0;
-    p.el.classList.remove('sharp'); p.state = 'idle';
-  }
+  function unload(p){ p.orig.width = p.orig.height = 0; p.enh.width = p.enh.height = 0; p.state = 'idle'; }
   async function renderPage(p, g){
-    const pxW = Math.max(200, Math.round(p.el.clientWidth * dpr));
-    const res = await source.render(p.i, pxW, p.orig);
+    const T = Math.max(200, Math.round(p.el.clientWidth*dpr));
+    const page = await pdfDoc.getPage(p.i);
+    let chars = 0;
+    try{ const tc = await page.getTextContent(); for (const it of tc.items) chars += (it.str || '').trim().length; }catch(e){}
     if (g !== gen) return;
-    p.isScan = res.isScan;
+    const enh = strength > 0 && (mode === 'on' || (mode === 'auto' && chars < 20));   // gần như không có chữ thật → trang scan
+    const v1 = page.getViewport({scale: 1});
+    let scale = (enh && T < 1000 ? T*2 : T) / v1.width;
+    if (v1.width*scale*v1.height*scale > MAX_PX) scale = Math.sqrt(MAX_PX/(v1.width*v1.height));
+    const vp = page.getViewport({scale});
+    scratch.width = Math.floor(vp.width); scratch.height = Math.floor(vp.height);
+    const sctx = scratch.getContext('2d', {willReadFrequently: true});
+    sctx.fillStyle = '#fff'; sctx.fillRect(0, 0, scratch.width, scratch.height);
+    await page.render({canvasContext: sctx, viewport: vp}).promise;
+    page.cleanup();
+    if (g !== gen) return;
+    if (enh){ try{ sharpen(p.orig, p.enh, T, strength); }catch(e){ console.error(e); p.enh.width = 0; } }
+    if (!enh || !p.orig.width){ p.orig.width = scratch.width; p.orig.height = scratch.height; p.orig.getContext('2d').drawImage(scratch, 0, 0); p.enh.width = p.enh.height = 0; }
     p.el.style.aspectRatio = p.orig.width + ' / ' + p.orig.height;
-    applyEnhance(p);
     p.state = 'done';
     if (!p.want) unload(p);
   }
   async function pump(){
-    if (busy) return;
-    busy = true;
+    if (busy) return; busy = true;
     const g = gen;
     while (g === gen){
-      const cur = currentIndex();
-      let best = null, bd = Infinity;
-      for (const p of pages){
-        if (p.want && p.state === 'idle'){ const dd = Math.abs(p.i - cur); if (dd < bd){ bd = dd; best = p; } }
-      }
+      const cur = currentIndex(); let best = null, bd = Infinity;
+      for (const p of pages) if (p.want && p.state === 'idle'){ const dd = Math.abs(p.i - cur); if (dd < bd){ bd = dd; best = p; } }
       if (!best) break;
       best.state = 'busy';
-      try{ await renderPage(best, g); }
-      catch(e){ console.error(e); if (g === gen) best.state = 'error'; }
+      try{ await renderPage(best, g); }catch(e){ console.error(e); if (g === gen) best.state = 'error'; }
+      if (g !== gen && best.state === 'busy') best.state = 'idle';
       await nextFrame();
     }
     busy = false;
     if (g !== gen) pump();
   }
-
-  async function show(src){
-    gen++; enhGen++;
-    if (io) io.disconnect();
-    source = src; pages = []; pagesEl.textContent = ''; curIdx = 1;
-    const ratio = await src.ratio();
-    io = new IntersectionObserver(entries => {
-      for (const en of entries){
-        const p = pages[+en.target.dataset.i - 1];
-        if (!p) continue;
-        p.want = en.isIntersecting;
-        if (!p.want && p.state === 'done') unload(p);
-      }
+  function rerender(){ gen++; pages.forEach(p => { if (p.state !== 'idle') unload(p); }); pump(); }
+  function enterReader(name){
+    listY = window.scrollY; reading = true;
+    document.body.classList.remove('drawer'); document.body.classList.add('reading');
+    $('docName').textContent = name; $('pageNo').textContent = '';
+    pagesEl.textContent = ''; pages = [];
+  }
+  function closeReader(){
+    gen++; if (io) io.disconnect();
+    pages = []; pagesEl.textContent = '';
+    if (pdfDoc){ try{ pdfDoc.destroy(); }catch(e){} pdfDoc = null; }
+    saveBooks(); curPath = null; reading = false;
+    document.body.classList.remove('reading', 'showbar', 'compare');
+    render(); window.scrollTo(0, listY); runCovers();
+  }
+  async function showDoc(pdf, path, start){
+    gen++; if (io) io.disconnect();
+    pdfDoc = pdf; curPath = path; pages = []; pagesEl.textContent = '';
+    const v = (await pdf.getPage(1)).getViewport({scale: 1});
+    io = new IntersectionObserver(es => {
+      for (const en of es){ const p = pages[+en.target.dataset.i - 1]; if (!p) continue; p.want = en.isIntersecting; if (!p.want && p.state === 'done') unload(p); }
       pump();
     }, {rootMargin: '150% 0px'});
     const frag = document.createDocumentFragment();
-    for (let i = 1; i <= src.numPages; i++){
-      const el = document.createElement('div');
-      el.className = 'page'; el.dataset.i = i; el.style.aspectRatio = String(ratio);
-      const orig = document.createElement('canvas'); orig.className = 'orig';
-      const enh = document.createElement('canvas'); enh.className = 'enh';
-      const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = 'Đã làm nét';
-      el.append(orig, enh, tag);
-      frag.appendChild(el);
-      pages.push({i, el, orig, enh, state:'idle', want:false, isScan:false});
+    for (let i = 1; i <= pdf.numPages; i++){
+      const el = document.createElement('div'); el.className = 'page'; el.dataset.i = i; el.style.aspectRatio = v.width + ' / ' + v.height;
+      const orig = document.createElement('canvas'), enh = document.createElement('canvas'); enh.className = 'enh';
+      el.append(orig, enh); frag.appendChild(el);
+      pages.push({i, el, orig, enh, state: 'idle', want: false});
     }
     pagesEl.appendChild(frag);
+    start = Math.min(Math.max(1, start || 1), pdf.numPages); curIdx = start;
+    if (start > 1) pages[start-1].el.scrollIntoView(); else window.scrollTo(0, 0);
     pages.forEach(p => io.observe(p.el));
-    document.body.classList.add('has-doc');
-    $('docName').textContent = src.name;
-    window.scrollTo(0, 0);
-    updatePageNo();
+    $('pageNo').textContent = start + ' / ' + pdf.numPages;
   }
-  function updatePageNo(){
-    if (!source) return;
-    $('pageNo').textContent = currentIndex() + ' / ' + source.numPages;
+  async function openPath(p, n, s){
+    if (!window.pdfjsLib) return;
+    enterReader(n);
+    try{
+      const pdf = await pdfjsLib.getDocument(docOpts(p)).promise;
+      const m = meta(p); m.n = n; m.s = s; m.last = Date.now(); m.pages = pdf.numPages; saveBooks();
+      await showDoc(pdf, p, m.page || 1);
+    }catch(e){ console.error(e); fail(e); }
   }
+  function fail(e){
+    alert(e && e.name === 'PasswordException' ? 'File này có mật khẩu, bản này chưa mở được.' : 'Không mở được file này. File có thể bị hỏng hoặc không phải PDF.');
+    closeReader();
+  }
+  $('file').addEventListener('change', async e => {
+    const f = e.target.files && e.target.files[0]; e.target.value = '';
+    if (!f || !window.pdfjsLib) return;
+    enterReader(f.name);
+    try{
+      const pdf = await pdfjsLib.getDocument({data: new Uint8Array(await f.arrayBuffer()), isEvalSupported: false}).promise;
+      await showDoc(pdf, null, 1);
+    }catch(err){ console.error(err); fail(err); }
+  });
 
   /* ---------- Điều khiển ---------- */
-  $('file').addEventListener('change', async e => {
-    const f = e.target.files && e.target.files[0];
-    e.target.value = '';
-    if (!f) return;
-    if (!window.pdfjsLib){ say('Không tải được bộ đọc PDF. Kiểm tra mạng rồi tải lại trang.', true); return; }
-    say('Đang mở ' + f.name + '…');
-    $('docName').textContent = 'Đang mở…';
-    try{
-      const buf = await f.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({data: new Uint8Array(buf), isEvalSupported: false}).promise;
-      say('');
-      await show(pdfSource(pdf, f.name));
-    }catch(err){
-      console.error(err);
-      const pw = err && err.name === 'PasswordException';
-      const t = pw ? 'File này có mật khẩu. Bản thử chưa mở được file có mật khẩu.' : 'Không mở được file này. File có thể bị hỏng hoặc không phải PDF.';
-      say(t, true);
-      $('docName').textContent = source ? source.name : 'Đọc PDF nét';
-      if (source) alert(t);
-    }
-  });
-  $('openBtn').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('file').click(); } });
-  $('sampleBtn').addEventListener('click', () => show(sampleSource));
+  $('menuBtn').onclick = () => document.body.classList.add('drawer');
+  $('scrim').onclick = () => document.body.classList.remove('drawer');
+  document.querySelectorAll('#drawer button[data-shelf]').forEach(b => b.onclick = () => go(b.dataset.shelf === 'folder' ? {type:'folder', path: (view.type === 'folder' && view.path) || root} : {type:'shelf', key: b.dataset.shelf}));
+  $('pickBtn').onclick = () => { document.body.classList.remove('drawer'); $('file').click(); };
+  $('backBtn').onclick = closeReader;
+  $('setBtn').onclick = () => document.body.classList.toggle('showbar');
 
   const segBtns = document.querySelectorAll('.seg button');
-  function paintMode(){ segBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode))); }
-  segBtns.forEach(b => b.addEventListener('click', () => { mode = b.dataset.mode; paintMode(); save(); refreshEnhance(); }));
+  const paintMode = () => segBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+  segBtns.forEach(b => b.onclick = () => { mode = b.dataset.mode; paintMode(); saveSet(); rerender(); });
   paintMode();
-
-  const str = $('str');
-  str.value = Math.round(strength*100);
-  str.addEventListener('change', () => { strength = str.value/100; save(); refreshEnhance(); });
-
+  const str = $('str'); str.value = Math.round(strength*100);
+  str.addEventListener('change', () => { strength = str.value/100; saveSet(); rerender(); });
   const hold = $('hold');
-  const on = e => { e.preventDefault(); document.body.classList.add('compare'); };
-  const off = () => document.body.classList.remove('compare');
+  const on = e => { e.preventDefault(); document.body.classList.add('compare'); }, off = () => document.body.classList.remove('compare');
   hold.addEventListener('pointerdown', on);
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => hold.addEventListener(t, off));
   hold.addEventListener('contextmenu', e => e.preventDefault());
@@ -395,17 +469,25 @@ body.has-doc #empty{display:none}
   hold.addEventListener('keyup', off);
 
   let sc = false;
-  window.addEventListener('scroll', () => { if (sc) return; sc = true; requestAnimationFrame(() => { sc = false; updatePageNo(); }); }, {passive:true});
+  window.addEventListener('scroll', () => {
+    if (sc || !reading) return; sc = true;
+    requestAnimationFrame(() => {
+      sc = false; if (!reading || !pdfDoc) return;
+      const cur = currentIndex(); $('pageNo').textContent = cur + ' / ' + pdfDoc.numPages;
+      if (curPath && pages.length){ const m = meta(curPath); if (m.page !== cur){ m.page = cur; saveBooksSoon(); } }
+    });
+  }, {passive: true});
   let rt = 0;
-  window.addEventListener('resize', () => {
-    clearTimeout(rt);
-    rt = setTimeout(() => {
-      if (window.innerWidth === lastW || !source) return;   // chỉ vẽ lại khi đổi chiều rộng (xoay máy)
-      lastW = window.innerWidth; gen++; enhGen++;
-      pages.forEach(p => { if (p.state !== 'idle') unload(p); });
-      pump();
-    }, 250);
-  });
+  window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (window.innerWidth === lastW) return; lastW = window.innerWidth; if (reading) rerender(); }, 250); });
+
+  window.onNativeResume = () => { if (!reading) render(); };
+  window.onBack = () => {
+    if (document.body.classList.contains('drawer')){ document.body.classList.remove('drawer'); return true; }
+    if (reading){ closeReader(); return true; }
+    if (view.type === 'folder' && view.path && view.path !== root && view.path.indexOf(root) === 0){ go({type:'folder', path: view.path.slice(0, view.path.lastIndexOf('/')) || root}); return true; }
+    return false;
+  };
+  render();
 })();
 </script>
 </body>

@@ -1,0 +1,44 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Tao project Flutter
+        run: |
+          flutter create --platforms android --org vn.docpdf --project-name doc_pdf_net app
+          cp main.dart app/lib/main.dart
+          cp pubspec.yaml app/pubspec.yaml
+          rm -rf app/test
+          mkdir -p app/assets
+          cp index.html app/assets/index.html
+          curl -fL -o app/assets/pdf.min.js https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js
+          curl -fL -o app/assets/pdf.worker.min.js https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js
+          sed -i 's/android:label="[^"]*"/android:label="Đọc PDF nét"/' app/android/app/src/main/AndroidManifest.xml
+
+      - name: Build APK
+        working-directory: app
+        run: |
+          flutter pub get
+          flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: doc-pdf-net-apk
+          path: app/build/app/outputs/flutter-apk/app-release.apk
